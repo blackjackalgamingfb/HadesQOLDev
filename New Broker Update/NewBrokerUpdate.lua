@@ -85,9 +85,12 @@ ModUtil.Path.Override( "GenerateMarketItems", function()
 			table.insert( CurrentRun.MarketItems, DeepCopyTable( buyData ))
 		end
 	end
+    -- Cache a copy of the forward items for reverse swapping
+    CurrentRun.ForwardMarketItems = ShallowCopyTable(CurrentRun.MarketItems)
 
-	return CurrentRun.MarketItems
+    return CurrentRun.MarketItems
 end)
+
 
 function GenerateReverseMarketItems()
     local forwardItems = GenerateMarketItems()
@@ -164,7 +167,7 @@ ModUtil.Path.Override( "OpenMarketScreen", function()
 			ShadowBlur = 0, ShadowColor = {0,0,0,0}, ShadowOffset={0, 3},
 			Justification = "Center" } ))
 
-	CreateTextBox({ Id = components.ShopBackground.Id, Text = "Press Confirm to swap between Normal Trading and Reverse Trading features"
+	CreateTextBox({ Id = components.ShopBackground.Id, Text = "Press Confirm to swap between Normal Trading and Reverse Trading features",
 				OffsetY = -320, Width = 840,
 				Color = {0.698, 0.702, 0.514, 1.0},
 				Font = "AlegreyaSansSCExtraBold",
@@ -214,6 +217,48 @@ ModUtil.Path.Override( "OpenMarketScreen", function()
 
 end)
 
+function SetBrokerMultiplier( screen, button )
+    -- Sometimes called as SetBrokerMultiplier(button)
+    if button ~= nil and button.Id ~= nil and (screen == nil or screen.Name == nil) then
+        screen = ActiveScreens and ActiveScreens.Market
+    end
+
+    if not button or not button.Multiplier then
+        return
+    end
+
+    -- Set and clamp the multiplier using your helper
+    local mult = SetBrokerMultiplierValue(button.Multiplier)
+
+    -- Find the active screen if not passed in
+    if not screen or not screen.Components then
+        screen = ActiveScreens and ActiveScreens.Market
+    end
+    if not screen or not screen.Components then
+        return
+    end
+
+    -- Reset all multiplier button colors to white
+    for _, value in ipairs({ 1, 10, 100 }) do
+        local key = "MultiplierButtonx"..tostring(value)
+        local comp = screen.Components[key]
+        if comp then
+            ModifyTextBox({
+                Id = comp.Id,
+                ColorTarget = Color.White,
+                ColorDuration = 0.1,
+            })
+        end
+    end
+
+    -- Highlight the selected one in gold
+    ModifyTextBox({
+        Id = button.Id,
+        ColorTarget = Color.Gold,
+        ColorDuration = 0.1,
+    })
+end
+
 function CreateMarketButtons( screen )
 	local components = screen.Components
 	local tooltipData = {}
@@ -252,11 +297,15 @@ function CreateMarketButtons( screen )
 
 			local purchaseButtonTitleKey = "PurchaseButtonTitle"..itemIndex
 			components[purchaseButtonTitleKey] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1, X = itemLocationX, Y = itemLocationY })
+            
+            local mult = GetBrokerMultiplier()
+            local effectiveCost = (item.CostAmount or 0) * mult
+            effectiveCost = math.floor(effectiveCost + 0.5)
+            if effectiveCost < 1 then effectiveCost = 1 end
 
 
-
-			local costColor = {0.878, 0.737, 0.259, 1.0}
-			if not HasResource( item.CostName, item.CostAmount ) then
+            local costColor = {0.878, 0.737, 0.259, 1.0}
+			if not HasResource( item.CostName, effectiveCost ) then
 				costColor = Color.TradeUnaffordable
 			end
 
@@ -412,8 +461,8 @@ ModUtil.Path.Override("CloseMarketScreen", function( screen, button )
             end
             -- Clear cache so next market session starts clean
             CurrentRun.ForwardMarketItems = nil
-            CurrentRun.BrokerMultiplier = 1
         end
+        CurrentRun.BrokerMultiplier = 1
     end
 
     -- Belt-and-suspenders: never leave this stuck true in a save
