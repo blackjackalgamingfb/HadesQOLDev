@@ -5,6 +5,35 @@ if GameState then
     GameState.BrokerSwapInProgress = GameState.BrokerSwapInProgress or false
 end
 
+function GetBrokerMultiplier()
+    local mult = 1
+
+    if CurrentRun and CurrentRun.BrokerMultiplier then
+        mult = CurrentRun.BrokerMultiplier
+    end
+
+    mult = tonumber(mult) or 1
+    if mult < 1 then
+        mult = 1
+    end
+    return math.floor(mult + 0.5)
+end
+
+function SetBrokerMultiplierValue(value)
+    local mult = tonumber(value) or 1
+    if mult < 1 then
+        mult = 1
+    end
+    mult = math.floor(mult + 0.5)
+
+    if CurrentRun then
+        CurrentRun.BrokerMultiplier = mult
+    end
+
+    print("Broker multiplier set to x"..tostring(mult))
+    return mult
+end
+
 ModUtil.Path.Override( "UseMarketObject", function( usee, args )
 	PlayInteractAnimation( usee.ObjectId )
 	UseableOff({ Id = usee.ObjectId })
@@ -365,59 +394,112 @@ ModUtil.Path.Override("CloseMarketScreen", function( screen, button )
 end)
 
 ModUtil.Path.Override( "HandleMarketPurchase", function( screen, button )
-	local item = button.Data
-    if not HasResource( item.CostName, item.CostAmount ) then
-		Flash({ Id = screen.Components["PurchaseButton".. button.Index].Id, Speed = 3, MinFraction = 0.6, MaxFraction = 0.0, Color = Color.CostUnaffordable, ExpireAfterCycle = true })
-		MarketPurchaseFailPresentation( item )
-		return
-	end
+    local item = button.Data
+    if not item then
+        return
+    end
 
-	screen.NumSales = screen.NumSales + 1
-	GameState.MarketSales = (GameState.MarketSales or 0) + 1
+    -- =========================================
+    -- Apply broker multiplication factor
+    -- =========================================
+    local mult = GetBrokerMultiplier()
 
-	MarketPurchaseSuccessPresentation( item )
-	if item.Priority then
-		MarketPurchaseSuccessRepeatablePresentation( button )
-	else
-		item.SoldOut = true
-		Destroy({ Ids = { screen.Components["PurchaseButtonTitle".. button.Index].Id , screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"].Id, screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"].Id, screen.Components["Backing".. button.Index].Id, screen.Components["Icon".. button.Index].Id }})
-		screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"] = nil
-		screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"] = nil
-		screen.Components["PurchaseButtonTitle".. button.Index] = nil
-		screen.Components["Backing".. button.Index] = nil
-		screen.Components["Icon".. button.Index] = nil
+    local rawCostAmount = item.CostAmount or 0
+    local rawBuyAmount  = item.BuyAmount or 0
 
-		-- SetScale({ Id = screen.Components["PurchaseButton".. button.Index].Id, Fraction = 0.5, Duration = 0.2 })
-		SetAlpha({ Id = screen.Components["PurchaseButton".. button.Index].Id, Fraction = 0, Duration = 0.2 })
-		wait(0.2)
-		Destroy({ Id = screen.Components["PurchaseButton".. button.Index].Id })
-		screen.Components["PurchaseButton".. button.Index] = nil
-	end
-	local resourceArgs = { SkipOverheadText = true, ApplyMultiplier = false, }
+    local costAmount = rawCostAmount * mult
+    local buyAmount  = rawBuyAmount * mult
 
-	SpendResource( item.CostName, item.CostAmount, "Market", resourceArgs  )
+    costAmount = math.floor(costAmount + 0.5)
+    buyAmount  = math.floor(buyAmount + 0.5)
 
-	wait(0.3)
+    if costAmount < 1 then
+        costAmount = 1
+    end
+    if buyAmount < 1 then
+        buyAmount = 1
+    end
+    -- =========================================
 
-	AddResource( item.BuyName, item.BuyAmount, "Market", resourceArgs  )
+    -- Use the *scaled* cost here, not item.CostAmount
+    if not HasResource( item.CostName, costAmount ) then
+        Flash({
+            Id = screen.Components["PurchaseButton".. button.Index].Id,
+            Speed = 3,
+            MinFraction = 0.6,
+            MaxFraction = 0.0,
+            Color = Color.CostUnaffordable,
+            ExpireAfterCycle = true
+        })
+        MarketPurchaseFailPresentation( item )
+        return
+    end
 
-	-- Check updated affordability
-	for itemIndex, item in ipairs( CurrentRun.MarketItems ) do
-		if not item.SoldOut then
-			local costColor = Color.TradeAffordable
-			if not HasResource( item.CostName, item.CostAmount ) then
-				costColor = Color.TradeUnaffordable
-			end
-			local purchaseButtonKey = "PurchaseButton"..itemIndex
-			ModifyTextBox({ Id = screen.Components["PurchaseButtonTitle"..itemIndex.."SellText"].Id, ColorTarget = costColor, ColorDuration = 0.1 })
-		end
-	end
+    screen.NumSales = screen.NumSales + 1
+    GameState.MarketSales = (GameState.MarketSales or 0) + 1
 
-	if CoinFlip() then
-		thread( PlayVoiceLines, ResourceData[item.CostName].BrokerSpentVoiceLines, true )
-	else
-		thread( PlayVoiceLines, ResourceData[item.BuyName].BrokerPurchaseVoiceLines, true )
-	end
+    MarketPurchaseSuccessPresentation( item )
+    if item.Priority then
+        MarketPurchaseSuccessRepeatablePresentation( button )
+    else
+        item.SoldOut = true
+        Destroy({ Ids = {
+            screen.Components["PurchaseButtonTitle".. button.Index].Id,
+            screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"].Id,
+            screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"].Id,
+            screen.Components["Backing".. button.Index].Id,
+            screen.Components["Icon".. button.Index].Id
+        }})
+        screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"] = nil
+        screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"] = nil
+        screen.Components["PurchaseButtonTitle".. button.Index] = nil
+        screen.Components["Backing".. button.Index] = nil
+        screen.Components["Icon".. button.Index] = nil
+
+        SetAlpha({ Id = screen.Components["PurchaseButton".. button.Index].Id, Fraction = 0, Duration = 0.2 })
+        wait(0.2)
+        Destroy({ Id = screen.Components["PurchaseButton".. button.Index].Id })
+        screen.Components["PurchaseButton".. button.Index] = nil
+    end
+
+    local resourceArgs = { SkipOverheadText = true, ApplyMultiplier = false, }
+
+    -- Spend scaled cost
+    SpendResource( item.CostName, costAmount, "Market", resourceArgs  )
+
+    wait(0.3)
+
+    -- Give scaled amount
+    AddResource( item.BuyName, buyAmount, "Market", resourceArgs  )
+
+    -- Check updated affordability (also scaled by current multiplier)
+    for itemIndex, marketItem in ipairs( CurrentRun.MarketItems ) do
+        if not marketItem.SoldOut then
+            local baseCost = marketItem.CostAmount or 0
+            local effectiveCost = baseCost * mult
+            effectiveCost = math.floor(effectiveCost + 0.5)
+            if effectiveCost < 1 then
+                effectiveCost = 1
+            end
+
+            local costColor = Color.TradeAffordable
+            if not HasResource( marketItem.CostName, effectiveCost ) then
+                costColor = Color.TradeUnaffordable
+            end
+
+            ModifyTextBox({
+                Id = screen.Components["PurchaseButtonTitle"..itemIndex.."SellText"].Id,
+                ColorTarget = costColor,
+                ColorDuration = 0.1
+            })
+        end
+    end
+
+    if CoinFlip() then
+        thread( PlayVoiceLines, ResourceData[item.CostName].BrokerSpentVoiceLines, true )
+    else
+        thread( PlayVoiceLines, ResourceData[item.BuyName].BrokerPurchaseVoiceLines, true )
+    end
 end)
 
 
