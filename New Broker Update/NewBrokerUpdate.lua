@@ -397,7 +397,13 @@ function SwapMarketItemsScreen( screen, button )
 end
 
 ModUtil.Path.Override("CloseMarketScreen", function( screen, button )
-    -- Only run cleanup when this is a real close, not a swap
+	DisableShopGamepadCursor()
+	CloseScreen( GetAllIds( screen.Components ) )
+	PlaySound({ Name = "/SFX/Menu Sounds/GeneralWhooshMENU" })
+	UnfreezePlayerUnit()
+	screen.KeepOpen = false
+	OnScreenClosed({ Flag = screen.Name })
+        -- Only run cleanup when this is a real close, not a swap
     if GameState and not GameState.BrokerSwapInProgress and CurrentRun then
         if CurrentRun.ForwardMarketItems then
             -- If we somehow left while reversed, snap back to forward
@@ -406,6 +412,7 @@ ModUtil.Path.Override("CloseMarketScreen", function( screen, button )
             end
             -- Clear cache so next market session starts clean
             CurrentRun.ForwardMarketItems = nil
+            CurrentRun.BrokerMultiplier = 1
         end
     end
 
@@ -413,13 +420,6 @@ ModUtil.Path.Override("CloseMarketScreen", function( screen, button )
     if GameState then
         GameState.BrokerSwapInProgress = false
     end
-    return result
-	DisableShopGamepadCursor()
-	CloseScreen( GetAllIds( screen.Components ) )
-	PlaySound({ Name = "/SFX/Menu Sounds/GeneralWhooshMENU" })
-	UnfreezePlayerUnit()
-	screen.KeepOpen = false
-	OnScreenClosed({ Flag = screen.Name })
 end)
 
 ModUtil.Path.Override( "HandleMarketPurchase", function( screen, button )
