@@ -507,12 +507,14 @@ function SetBrokerMultiplier( screen, button )
     -- Highlight the selected one in gold
     if button.TextId then
     ModifyTextBox({
-        Id = button.Id,
+        Id = comp.TextId,
         ColorTarget = Color.Gold,
         ColorDuration = 0.1,
     })
     end
+    UpdateBrokerUIForMultiplier(screen)
 end
+
 
 
 
