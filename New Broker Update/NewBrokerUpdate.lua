@@ -335,43 +335,73 @@ function CreateMarketButtons( screen )
 			end
 
 			-- left side text
-			local buyResourceData = ResourceData[item.BuyName]
-			if buyResourceData then
-				components[purchaseButtonTitleKey.."Icon"] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1 })
-				SetAnimation({ Name = buyResourceData.Icon, DestinationId = components[purchaseButtonTitleKey .. "Icon"].Id, Scale = 1 })
-				Attach({ Id = components[purchaseButtonTitleKey.."Icon"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = -400, OffsetY = 0 })
-				components[purchaseButtonTitleKey.."SellText"] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1 })
-				Attach({ Id = components[purchaseButtonTitleKey.."SellText"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = 0, OffsetY = 0 })
-				        
+			            -- left side text
+            local buyResourceData = ResourceData[item.BuyName]
+            if buyResourceData then
+                -- icon holder
+                local iconKey = purchaseButtonTitleKey.."Icon"
+                components[iconKey] = CreateScreenComponent({
+                    Name  = "BlankObstacle",
+                    Group = "Combat_Menu",
+                    Scale = 1,
+                })
+                SetAnimation({
+                    Name         = buyResourceData.Icon,
+                    DestinationId = components[iconKey].Id,
+                    Scale        = 1,
+                })
+                Attach({
+                    Id            = components[iconKey].Id,
+                    DestinationId = components[purchaseButtonTitleKey].Id,
+                    OffsetX       = -400,
+                    OffsetY       = 0,
+                })
+
+                -- right-hand text anchor (“SellText”)
+                local sellTextKey = purchaseButtonTitleKey.."SellText"
+                components[sellTextKey] = CreateScreenComponent({
+                    Name  = "BlankObstacle",
+                    Group = "Combat_Menu",
+                    Scale = 1,
+                })
+                Attach({
+                    Id            = components[sellTextKey].Id,
+                    DestinationId = components[purchaseButtonTitleKey].Id,
+                    OffsetX       = 0,
+                    OffsetY       = 0,
+                })
+
                 local titleText = "MarketScreen_Entry_Title"
                 if item.BuyAmount == 1 then
                     titleText = "MarketScreen_Entry_Title_Singular"
                 end
 
-                -- effectiveBuy is already computed by GetDisplayMarketItem above
+                -- numeric amount next to the buy icon (left side)
                 local buyAmountKey = purchaseButtonTitleKey.."BuyAmount"
                 components[buyAmountKey] = CreateScreenComponent({
                     Name  = "BlankObstacle",
                     Group = "Combat_Menu",
                     Scale = 1,
                 })
-
                 Attach({
-                    Id = components[buyAmountKey].Id,
-                    DestinationId = components[purchaseButtonTitleKey.."Icon"].Id,
-                    OffsetX = 32, OffsetY = 0,
+                    Id            = components[buyAmountKey].Id,
+                    DestinationId = components[iconKey].Id,
+                    OffsetX       = 32,
+                    OffsetY       = 0,
                 })
-
                 CreateTextBox({
-                    Id = components[buyAmountKey].Id,
-                    Text = tostring(effectiveBuy),
+                    Id    = components[buyAmountKey].Id,
+                    Text  = tostring(effectiveBuy),
                     FontSize = 32 * yScale,
                     Color = Color.White,
-                    Font = "AlegreyaSansSCMedium",
-                    ShadowBlur = 0, ShadowColor = {0,0,0,1}, ShadowOffset={0, 2},
+                    Font  = "AlegreyaSansSCMedium",
+                    ShadowBlur   = 0,
+                    ShadowColor  = {0,0,0,1},
+                    ShadowOffset = {0, 2},
                     Justification = "Left",
                 })
 
+                -- main formatted description on the purchase button
                 CreateTextBoxWithFormat({
                     Id = components[purchaseButtonKey].Id,
                     Text = buyResourceData.IconString or item.BuyName,
@@ -386,8 +416,9 @@ function CreateMarketButtons( screen )
                     TextSymbolScale = textSymbolScale,
                     Format = "MarketScreenDescriptionFormat",
                     VariableAutoFormat = "BoldFormatGraft",
-                    UseDescription = true
+                    UseDescription = true,
                 })
+            
 
 				if not item.Priority then
 					CreateTextBox({ Id = components[purchaseButtonKey].Id, Text = "Market_LimitedTimeOffer", OffsetX = 300, OffsetY = 0, FontSize = 28, Color = costColor, Font = "AlegreyaSansSCRegular", Justification = "Left", TextSymbolScale = textSymbolScale })
