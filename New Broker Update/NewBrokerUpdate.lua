@@ -19,6 +19,30 @@ function GetBrokerMultiplier()
     return math.floor(mult + 0.5)
 end
 
+local function GetDisplayMarketItem( item, mult )
+    -- Shared helper: takes a raw market item and a multiplier,
+    -- returns a display copy + the two effective values.
+    mult = mult or GetBrokerMultiplier() or 1
+
+    local effectiveCost = (item.CostAmount or 0) * mult
+    effectiveCost = math.floor(effectiveCost + 0.5)
+    if effectiveCost < 1 then
+        effectiveCost = 1
+    end
+
+    local effectiveBuy = (item.BuyAmount or 0) * mult
+    effectiveBuy = math.floor(effectiveBuy + 0.5)
+    if effectiveBuy < 1 then
+        effectiveBuy = 1
+    end
+
+    local displayItem = DeepCopyTable(item)
+    displayItem.CostAmount = effectiveCost
+    displayItem.BuyAmount  = effectiveBuy
+
+    return displayItem, effectiveCost, effectiveBuy
+end
+
 function SetBrokerMultiplierValue(value)
     local mult = tonumber(value) or 1
     if mult < 1 then
@@ -293,31 +317,16 @@ function CreateMarketButtons( screen )
 			local itemBackingKey = "Backing"..itemIndex
 			components[itemBackingKey] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", X = itemLocationX + itemLocationTextBoxOffset, Y = itemLocationY })
 
-			local purchaseButtonTitleKey = "PurchaseButtonTitle"..itemIndex
-			components[purchaseButtonTitleKey] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1, X = itemLocationX, Y = itemLocationY })
-            
-            local mult = GetBrokerMultiplier() or 1
+            local purchaseButtonTitleKey = "PurchaseButtonTitle"..itemIndex
+            components[purchaseButtonTitleKey] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1, X = itemLocationX, Y = itemLocationY })
 
-            local effectiveCost = (item.CostAmount or 0) * mult
-            effectiveCost = math.floor(effectiveCost + 0.5)
-            if effectiveCost < 1 then
-                effectiveCost = 1
+            -- NEW: shared helper for cost/buy math so it stays in sync
+            local displayItem, effectiveCost, effectiveBuy = GetDisplayMarketItem( item )
+
+            local costColor = { 0.878, 0.737, 0.259, 1.0 }
+            if not HasResource( item.CostName, effectiveCost ) then
+                costColor = Color.TradeUnaffordable
             end
-
-            local effectiveBuy = (item.BuyAmount or 0) * mult
-            effectiveBuy = math.floor(effectiveBuy + 0.5)
-            if effectiveBuy < 1 then
-                effectiveBuy = 1
-            end
-
-            local displayItem = DeepCopyTable(item)
-            displayItem.CostAmount = effectiveCost
-            displayItem.BuyAmount  = effectiveBuy
-
-            local costColor = {0.878, 0.737, 0.259, 1.0}
-			if not HasResource( item.CostName, effectiveCost ) then
-				costColor = Color.TradeUnaffordable
-			end
 
             components[purchaseButtonKey].OnPressedFunctionName = "HandleMarketPurchase"
 			if not firstUseable then
@@ -333,46 +342,53 @@ function CreateMarketButtons( screen )
 				Attach({ Id = components[purchaseButtonTitleKey .. "Icon"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = -400, OffsetY = 0 })
 				components[purchaseButtonTitleKey .. "SellText"] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1 })
 				Attach({ Id = components[purchaseButtonTitleKey .. "SellText"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = 0, OffsetY = 0 })
-
-				local titleText = "MarketScreen_Entry_Title"
-				if item.BuyAmount == 1 then
-					titleText = "MarketScreen_Entry_Title_Singular"
-				end
-                
-				local mult = GetBrokerMultiplier()
-                local effectiveBuy = (item.BuyAmount or 0) * mult
-                effectiveBuy = math.floor(effectiveBuy + 0.5)
-                if effectiveBuy < 1 then
-                    effectiveBuy = 1
+				        
+                local titleText = "MarketScreen_Entry_Title"
+                if item.BuyAmount == 1 then
+                    titleText = "MarketScreen_Entry_Title_Singular"
                 end
 
+                -- effectiveBuy is already computed by GetDisplayMarketItem above
                 local buyAmountKey = purchaseButtonTitleKey .. "BuyAmount"
-                components[buyAmountKey] = CreateScreenComponent({ Name  = "BlankObstacle", Group = "Combat_Menu", Scale = 1, })
-                Attach({ Id = components[buyAmountKey].Id, DestinationId = components[purchaseButtonTitleKey .. "Icon"].Id, OffsetX = 32, OffsetY = 0, })
+                components[buyAmountKey] = CreateScreenComponent({
+                    Name  = "BlankObstacle",
+                    Group = "Combat_Menu",
+                    Scale = 1,
+                })
+
+                Attach({
+                    Id = components[buyAmountKey].Id,
+                    DestinationId = components[purchaseButtonTitleKey .. "Icon"].Id,
+                    OffsetX = 32, OffsetY = 0,
+                })
+
                 CreateTextBox({
                     Id = components[buyAmountKey].Id,
                     Text = tostring(effectiveBuy),
-                    FontSize = 16 * yScale,
+                    FontSize = 32 * yScale,
                     Color = Color.White,
                     Font = "AlegreyaSansSCMedium",
                     ShadowBlur = 0, ShadowColor = {0,0,0,1}, ShadowOffset={0, 2},
                     Justification = "Left",
                 })
 
-				CreateTextBoxWithFormat({ Id = components[purchaseButtonKey].Id, Text = buyResourceData.IconString or item.BuyName,
-					FontSize = 16 * yScale,
-					OffsetX = -350, OffsetY = 0,
-					Width = 650,
-					Color = Color.White,
-					Justification = "Left",
-					VerticalJustification = "Top",
-					LuaKey = "TempTextData",
-					LuaValue = displayItem,
-					TextSymbolScale = textSymbolScale,
-					Format = "MarketScreenDescriptionFormat",
-					VariableAutoFormat = "BoldFormatGraft",
-					UseDescription = true
-				})
+                CreateTextBoxWithFormat({
+                    Id = components[purchaseButtonKey].Id,
+                    Text = buyResourceData.IconString or item.BuyName,
+                    FontSize = 16 * yScale,
+                    OffsetX = -350, OffsetY = 0,
+                    Width = 650,
+                    Color = Color.White,
+                    Justification = "Left",
+                    VerticalJustification = "Top",
+                    LuaKey = "TempTextData",
+                    LuaValue = displayItem,
+                    TextSymbolScale = textSymbolScale,
+                    Format = "MarketScreenDescriptionFormat",
+                    VariableAutoFormat = "BoldFormatGraft",
+                    UseDescription = true
+                })
+
 				if not item.Priority then
 					CreateTextBox({ Id = components[purchaseButtonKey].Id, Text = "Market_LimitedTimeOffer", OffsetX = 300, OffsetY = 0, FontSize = 28, Color = costColor, Font = "AlegreyaSansSCRegular", Justification = "Left", TextSymbolScale = textSymbolScale })
 				end
@@ -391,6 +407,67 @@ function CreateMarketButtons( screen )
 	end
 end
 
+local function UpdateBrokerUIForMultiplier( screen )
+    if not screen or not screen.Components then
+        return
+    end
+    if not CurrentRun or not CurrentRun.MarketItems then
+        return
+    end
+
+    local components = screen.Components
+    local mult = GetBrokerMultiplier()
+
+    for itemIndex, item in ipairs(CurrentRun.MarketItems) do
+        if not item.SoldOut then
+            -- Use the same helper as CreateMarketButtons, so everything stays in sync
+            local displayItem, effectiveCost, effectiveBuy = GetDisplayMarketItem( item, mult )
+
+            -- Main left text (description with icons)
+            local purchaseButtonKey = "PurchaseButton"..itemIndex
+            local purchaseComp = components[purchaseButtonKey]
+            if purchaseComp and purchaseComp.Id then
+                ModifyTextBox({
+                    Id      = purchaseComp.Id,
+                    LuaKey  = "TempTextData",
+                    LuaValue = displayItem,
+                })
+            end
+
+            -- Right side cost text ("SellText")
+            local sellKey  = "PurchaseButtonTitle"..itemIndex.."SellText"
+            local sellComp = components[sellKey]
+            if sellComp and sellComp.Id then
+                ModifyTextBox({
+                    Id      = sellComp.Id,
+                    LuaKey  = "TempTextData",
+                    LuaValue = displayItem,
+                })
+
+                local costColor = Color.TradeAffordable
+                if not HasResource( item.CostName, effectiveCost ) then
+                    costColor = Color.TradeUnaffordable
+                end
+
+                ModifyTextBox({
+                    Id = sellComp.Id,
+                    ColorTarget = costColor,
+                    ColorDuration = 0.1,
+                })
+            end
+
+            -- Left numeric amount next to the buy icon
+            local buyAmountKey  = "PurchaseButtonTitle"..itemIndex.."BuyAmount"
+            local buyAmountComp = components[buyAmountKey]
+            if buyAmountComp and buyAmountComp.Id then
+                ModifyTextBox({
+                    Id   = buyAmountComp.Id,
+                    Text = tostring(effectiveBuy),
+                })
+            end
+        end
+    end
+end
 
 function SetBrokerMultiplier( screen, button )
     -- Sometimes called as SetBrokerMultiplier(button)
