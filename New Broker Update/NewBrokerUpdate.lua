@@ -337,11 +337,11 @@ function CreateMarketButtons( screen )
 			-- left side text
 			local buyResourceData = ResourceData[item.BuyName]
 			if buyResourceData then
-				components[purchaseButtonTitleKey .. "Icon"] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1 })
+				components[purchaseButtonTitleKey.."Icon"] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1 })
 				SetAnimation({ Name = buyResourceData.Icon, DestinationId = components[purchaseButtonTitleKey .. "Icon"].Id, Scale = 1 })
-				Attach({ Id = components[purchaseButtonTitleKey .. "Icon"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = -400, OffsetY = 0 })
-				components[purchaseButtonTitleKey .. "SellText"] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1 })
-				Attach({ Id = components[purchaseButtonTitleKey .. "SellText"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = 0, OffsetY = 0 })
+				Attach({ Id = components[purchaseButtonTitleKey.."Icon"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = -400, OffsetY = 0 })
+				components[purchaseButtonTitleKey.."SellText"] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1 })
+				Attach({ Id = components[purchaseButtonTitleKey.."SellText"].Id, DestinationId = components[purchaseButtonTitleKey].Id, OffsetX = 0, OffsetY = 0 })
 				        
                 local titleText = "MarketScreen_Entry_Title"
                 if item.BuyAmount == 1 then
@@ -349,7 +349,7 @@ function CreateMarketButtons( screen )
                 end
 
                 -- effectiveBuy is already computed by GetDisplayMarketItem above
-                local buyAmountKey = purchaseButtonTitleKey .. "BuyAmount"
+                local buyAmountKey = purchaseButtonTitleKey.."BuyAmount"
                 components[buyAmountKey] = CreateScreenComponent({
                     Name  = "BlankObstacle",
                     Group = "Combat_Menu",
@@ -358,7 +358,7 @@ function CreateMarketButtons( screen )
 
                 Attach({
                     Id = components[buyAmountKey].Id,
-                    DestinationId = components[purchaseButtonTitleKey .. "Icon"].Id,
+                    DestinationId = components[purchaseButtonTitleKey.."Icon"].Id,
                     OffsetX = 32, OffsetY = 0,
                 })
 
@@ -667,11 +667,11 @@ ModUtil.Path.Override( "HandleMarketPurchase", function( screen, button )
         screen.Components["Backing"..button.Index]                          = nil
         screen.Components["Icon"..button.Index]                             = nil
         
-        SetAlpha({ Id = screen.Components["PurchaseButton".. button.Index].Id, Fraction = 0, Duration = 0.2 })
+        SetAlpha({ Id = screen.Components["PurchaseButton"..button.Index].Id, Fraction = 0, Duration = 0.2 })
         
         wait(0.2)
         
-        Destroy({ Id = screen.Components["PurchaseButton".. button.Index].Id })
+        Destroy({ Id = screen.Components["PurchaseButton"..button.Index].Id })
         screen.Components["PurchaseButton".. button.Index] = nil
     end
 
