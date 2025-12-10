@@ -649,23 +649,26 @@ ModUtil.Path.Override( "HandleMarketPurchase", function( screen, button )
         MarketPurchaseSuccessRepeatablePresentation( button )
     else
         item.SoldOut = true
-        Destroy({ Ids = {
-            screen.Components["PurchaseButtonTitle".. button.Index].Id,
-            screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"].Id,
-            screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"].Id,
-            screen.Components["PurchaseButtonTitle".. button.Index .. "BuyAmount"],
-            screen.Components["Backing".. button.Index].Id,
-            screen.Components["Icon".. button.Index].Id
+                Destroy({ Ids = {
+            screen.Components["PurchaseButtonTitle"..button.Index].Id,
+            screen.Components["PurchaseButtonTitle"..button.Index.."SellText"].Id,
+            screen.Components["PurchaseButtonTitle"..button.Index.."Icon"].Id,
+            screen.Components["PurchaseButtonTitle"..button.Index.."BuyAmount"].Id,
+            screen.Components["Backing"..button.Index].Id,
+            screen.Components["Icon"..button.Index].Id,
         }})
-        screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"] = nil
-        screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"] = nil
-        screen.Components["PurchaseButtonTitle".. button.Index .. "BuyAmount"] = nil
-        screen.Components["PurchaseButtonTitle".. button.Index] = nil
-        screen.Components["Backing".. button.Index] = nil
-        screen.Components["Icon".. button.Index] = nil
 
+        screen.Components["PurchaseButtonTitle"..button.Index.."Icon"]      = nil
+        screen.Components["PurchaseButtonTitle"..button.Index.."SellText"]  = nil
+        screen.Components["PurchaseButtonTitle"..button.Index.."BuyAmount"] = nil
+        screen.Components["PurchaseButtonTitle"..button.Index]              = nil
+        screen.Components["Backing"..button.Index]                          = nil
+        screen.Components["Icon"..button.Index]                             = nil
+        
         SetAlpha({ Id = screen.Components["PurchaseButton".. button.Index].Id, Fraction = 0, Duration = 0.2 })
+        
         wait(0.2)
+        
         Destroy({ Id = screen.Components["PurchaseButton".. button.Index].Id })
         screen.Components["PurchaseButton".. button.Index] = nil
     end
