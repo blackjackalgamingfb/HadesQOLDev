@@ -117,8 +117,11 @@ function GenerateReverseMarketItems()
     return reverseItems
 end
 
+ModUtil.DebugCall(function ()
+
 ModUtil.Path.Override( "OpenMarketScreen", function()
 
+    print(">>> NewBrokerUpdate: OpenMarketScreen override running")
 	local screen = { Components = {} }
 	screen.Name = "Market"
 	screen.NumSales = 0
@@ -148,15 +151,80 @@ ModUtil.Path.Override( "OpenMarketScreen", function()
 	Attach({ Id = components.SwapButton.Id, DestinationId = components.ShopBackground.Id })
 	components.SwapButton.OnPressedFunctionName = "SwapMarketItemsScreen"
 	components.SwapButton.ControlHotkey = "Confirm"
-	
+
+    local multButtonDefs = {
+        { key = "MultiplierButtonx1",   Text = "x1",   Multiplier = 1,   OffsetX = -400, OffsetY = 380 },
+        { key = "MultiplierButtonx5",   Text = "x5",   Multiplier = 5,   OffsetX = -300, OffsetY = 380 },
+        { key = "MultiplierButtonx10",  Text = "x10",  Multiplier = 10,  OffsetX = -200, OffsetY = 380 },
+        { key = "MultiplierButtonx25",  Text = "x25",  Multiplier = 25,  OffsetX = -100, OffsetY = 380 },
+        { key = "MultiplierButtonx50",  Text = "x50",  Multiplier = 50,  OffsetX =    0, OffsetY = 380 },
+        { key = "MultiplierButtonx100", Text = "x100", Multiplier = 100, OffsetX =  100, OffsetY = 380 },
+        { key = "MultiplierButtonx250",  Text = "x250",  Multiplier = 250,  OffsetX = 200, OffsetY = 380 },
+        { key = "MultiplierButtonx500", Text = "x500",  Multiplier = 500,  OffsetX = 300, OffsetY = 380 },
+        { key = "MultiplierButtonx1000", Text = "x1000",  Multiplier = 1000,  OffsetX = 400, OffsetY = 380 },
+    }
+
+    for _, def in ipairs( multButtonDefs ) do
+        -- visible button frame
+        local button = CreateScreenComponent({
+            Name  = "MarketSlot",
+            Group = "Combat_Menu",
+            Scale = 1
+        })
+
+        SetScaleX({ Id = button.Id, Fraction = 0.10})
+        SetScaleY({ Id = button.Id, Fraction = 0.5})
+        components[def.key] = button
+
+        Attach({
+            Id = button.Id,
+            DestinationId = components.ShopBackground.Id,
+            OffsetX = def.OffsetX,
+            OffsetY = def.OffsetY,
+        })
+
+        button.OnPressedFunctionName = "SetBrokerMultiplier"
+        button.Multiplier = def.Multiplier
+        button.Key = def.key
+
+        -- child anchor JUST for the text
+        local textKey  = def.key .. "Text"
+        local textComp = CreateScreenComponent({
+            Name  = "BlankObstacle",
+            Group = "Combat_Menu",
+        })
+        components[textKey] = textComp
+
+        Attach({
+            Id = textComp.Id,
+            DestinationId = button.Id,
+            OffsetX = 0,
+            OffsetY = 0,
+        })
+
+        CreateTextBox({
+            Id = textComp.Id,
+            Text = def.Text,
+            FontSize = 28,
+            Color = Color.White,
+            Font = "AlegreyaSansSCBold",
+            Justification = "Center",
+        })
+
+        -- remember the text id on the button for highlighting later
+        button.TextId = textComp.Id
+
+        print("Multiplier Button Created:", def.key, "mult:", def.Multiplier)
+    end
+
+   	
 	SetScale({ Id = components.ShopBackgroundDim.Id, Fraction = 4 })
 	SetColor({ Id = components.ShopBackgroundDim.Id, Color = {0.090, 0.055, 0.157, 0.7} })
 
 	-- Title
 	CreateTextBox({ Id = components.ShopBackground.Id, Text = "MarketScreen_Title", FontSize = 32, OffsetX = 0, OffsetY = -445, Color = Color.White, Font = "SpectralSCLightTitling", ShadowBlur = 0, ShadowColor = {0,0,0,1}, ShadowOffset={0, 3}, Justification = "Center" })
-	CreateTextBox({ Id = components.ShopBackground.Id, Text = "MarketScreen_Hint", FontSize = 14, OffsetX = 0, OffsetY = 380, Width = 865, Color = Color.Gray, Font = "AlegreyaSansSCBold", ShadowBlur = 0, ShadowColor = {0,0,0,1}, ShadowOffset={0, 2}, Justification = "Center" })
-
-	-- Flavor Text
+	
+   	-- Flavor Text
 	local flavorTextOptions = { "MarketScreen_FlavorText01", "MarketScreen_FlavorText02", "MarketScreen_FlavorText03", }
 	local flavorText = GetRandomValue( flavorTextOptions )
 	CreateTextBox(MergeTables({ Id = components.ShopBackground.Id, Text = flavorText,
@@ -164,45 +232,16 @@ ModUtil.Path.Override( "OpenMarketScreen", function()
 			OffsetY = -385, Width = 840,
 			Color = {0.698, 0.702, 0.514, 1.0},
 			Font = "AlegreyaSansSCExtraBold",
-			ShadowBlur = 0, ShadowColor = {0,0,0,0}, ShadowOffset={0, 3},
+			ShadowBlur = 0, ShadowColor = {0,0,0,0}, ShadowOffset = {0, 3},
 			Justification = "Center" } ))
 
 	CreateTextBox({ Id = components.ShopBackground.Id, Text = "Press Confirm to swap between Normal Trading and Reverse Trading features",
+                FontSize = 16,
 				OffsetY = -320, Width = 840,
 				Color = {0.698, 0.702, 0.514, 1.0},
 				Font = "AlegreyaSansSCExtraBold",
-				ShadowBlur = 0, ShadowColor = {0,0,0,0}, ShadowOffset={0, 3},
+				ShadowBlur = 0, ShadowColor = {0,0,0,0}, ShadowOffset = {0, 3},
 				Justification = "Center" })
-
-    local multButtonDefs = {
-        { key = "MultiplierButtonx1",   Text = "x1",   Multiplier = 1,   OffsetX = -400, OffsetY = 380 },
-        { key = "MultiplierButtonx10",  Text = "x10",  Multiplier = 10,  OffsetX =    0, OffsetY = 380 },
-        { key = "MultiplierButtonx100", Text = "x100", Multiplier = 100, OffsetX =  400, OffsetY = 380 },
-    }
-
-    for _, def in ipairs(multButtonDefs) do
-        local comp = CreateScreenComponent({ Name = "Button_Default", Group = "Combat_Menu", Scale = 0.7 })
-        components[def.key] = comp
-
-        Attach({
-            Id = comp.Id,
-            DestinationId = components.ShopBackground.Id,
-            OffsetX = def.OffsetX,
-            OffsetY = def.OffsetY,
-        })
-
-        comp.OnPressedFunctionName = "SetBrokerMultiplier"
-        comp.Multiplier = def.Multiplier
-
-        CreateTextBox({
-            Id = comp.Id,
-            Text = def.Text,
-            FontSize = 22,
-            Color = Color.White,
-            Font = "AlegreyaSansSCBold",
-            Justification = "Center",
-        })
-    end
 
 	CreateMarketButtons( screen )
 
@@ -216,48 +255,7 @@ ModUtil.Path.Override( "OpenMarketScreen", function()
 	return screen
 
 end)
-
-function SetBrokerMultiplier( screen, button )
-    -- Sometimes called as SetBrokerMultiplier(button)
-    if button ~= nil and button.Id ~= nil and (screen == nil or screen.Name == nil) then
-        screen = ActiveScreens and ActiveScreens.Market
-    end
-
-    if not button or not button.Multiplier then
-        return
-    end
-
-    -- Set and clamp the multiplier using your helper
-    local mult = SetBrokerMultiplierValue(button.Multiplier)
-
-    -- Find the active screen if not passed in
-    if not screen or not screen.Components then
-        screen = ActiveScreens and ActiveScreens.Market
-    end
-    if not screen or not screen.Components then
-        return
-    end
-
-    -- Reset all multiplier button colors to white
-    for _, value in ipairs({ 1, 10, 100 }) do
-        local key = "MultiplierButtonx"..tostring(value)
-        local comp = screen.Components[key]
-        if comp then
-            ModifyTextBox({
-                Id = comp.Id,
-                ColorTarget = Color.White,
-                ColorDuration = 0.1,
-            })
-        end
-    end
-
-    -- Highlight the selected one in gold
-    ModifyTextBox({
-        Id = button.Id,
-        ColorTarget = Color.Gold,
-        ColorDuration = 0.1,
-    })
-end
+end)
 
 function CreateMarketButtons( screen )
 	local components = screen.Components
@@ -298,18 +296,30 @@ function CreateMarketButtons( screen )
 			local purchaseButtonTitleKey = "PurchaseButtonTitle"..itemIndex
 			components[purchaseButtonTitleKey] = CreateScreenComponent({ Name = "BlankObstacle", Group = "Combat_Menu", Scale = 1, X = itemLocationX, Y = itemLocationY })
             
-            local mult = GetBrokerMultiplier()
+            local mult = GetBrokerMultiplier() or 1
+
             local effectiveCost = (item.CostAmount or 0) * mult
             effectiveCost = math.floor(effectiveCost + 0.5)
-            if effectiveCost < 1 then effectiveCost = 1 end
+            if effectiveCost < 1 then
+                effectiveCost = 1
+            end
 
+            local effectiveBuy = (item.BuyAmount or 0) * mult
+            effectiveBuy = math.floor(effectiveBuy + 0.5)
+            if effectiveBuy < 1 then
+                effectiveBuy = 1
+            end
+
+            local displayItem = DeepCopyTable(item)
+            displayItem.CostAmount = effectiveCost
+            displayItem.BuyAmount  = effectiveBuy
 
             local costColor = {0.878, 0.737, 0.259, 1.0}
 			if not HasResource( item.CostName, effectiveCost ) then
 				costColor = Color.TradeUnaffordable
 			end
 
-			components[purchaseButtonKey].OnPressedFunctionName = "HandleMarketPurchase"
+            components[purchaseButtonKey].OnPressedFunctionName = "HandleMarketPurchase"
 			if not firstUseable then
 				TeleportCursor({ OffsetX = itemLocationX, OffsetY = itemLocationY })
 				firstUseable = true
@@ -328,34 +338,26 @@ function CreateMarketButtons( screen )
 				if item.BuyAmount == 1 then
 					titleText = "MarketScreen_Entry_Title_Singular"
 				end
-				CreateTextBox({ Id = components[purchaseButtonKey].Id, Text = titleText,
-					FontSize = 48 * yScale ,
-					OffsetX = -350, OffsetY = -35,
-					Width = 720,
-					Color = {0.878, 0.737, 0.259, 1.0},
-					Font = "AlegreyaSansSCMedium",
-					ShadowBlur = 0, ShadowColor = {0,0,0,1}, ShadowOffset={0, 2},
-					Justification = "Left",
-					VerticalJustification = "Top",
-					LuaKey = "TempTextData",
-					LuaValue = item,
-					LineSpacingBottom = 20,
-					TextSymbolScale = textSymbolScale,
-				})
-				CreateTextBox({ Id = components[purchaseButtonTitleKey.."SellText"].Id, Text = "MarketScreen_Cost",
-					FontSize = 48 * yScale ,
-					OffsetX = 420, OffsetY = -24,
-					Width = 720,
-					Color = costColor,
-					Font = "AlegreyaSansSCMedium",
-					ShadowBlur = 0, ShadowColor = {0,0,0,1}, ShadowOffset={0, 2},
-					Justification = "Right",
-					LuaKey = "TempTextData",
-					LuaValue = item,
-					LineSpacingBottom = 20,
-					TextSymbolScale = textSymbolScale,
-				})
-				ModifyTextBox({ Ids = components[purchaseButtonTitleKey.."SellText"].Id, BlockTooltip = true })
+                
+				local mult = GetBrokerMultiplier()
+                local effectiveBuy = (item.BuyAmount or 0) * mult
+                effectiveBuy = math.floor(effectiveBuy + 0.5)
+                if effectiveBuy < 1 then
+                    effectiveBuy = 1
+                end
+
+                local buyAmountKey = purchaseButtonTitleKey .. "BuyAmount"
+                components[buyAmountKey] = CreateScreenComponent({ Name  = "BlankObstacle", Group = "Combat_Menu", Scale = 1, })
+                Attach({ Id = components[buyAmountKey].Id, DestinationId = components[purchaseButtonTitleKey .. "Icon"].Id, OffsetX = 32, OffsetY = 0, })
+                CreateTextBox({
+                    Id = components[buyAmountKey].Id,
+                    Text = tostring(effectiveBuy),
+                    FontSize = 16 * yScale,
+                    Color = Color.White,
+                    Font = "AlegreyaSansSCMedium",
+                    ShadowBlur = 0, ShadowColor = {0,0,0,1}, ShadowOffset={0, 2},
+                    Justification = "Left",
+                })
 
 				CreateTextBoxWithFormat({ Id = components[purchaseButtonKey].Id, Text = buyResourceData.IconString or item.BuyName,
 					FontSize = 16 * yScale,
@@ -365,7 +367,7 @@ function CreateMarketButtons( screen )
 					Justification = "Left",
 					VerticalJustification = "Top",
 					LuaKey = "TempTextData",
-					LuaValue = item,
+					LuaValue = displayItem,
 					TextSymbolScale = textSymbolScale,
 					Format = "MarketScreenDescriptionFormat",
 					VariableAutoFormat = "BoldFormatGraft",
@@ -389,9 +391,57 @@ function CreateMarketButtons( screen )
 	end
 end
 
+
+function SetBrokerMultiplier( screen, button )
+    -- Sometimes called as SetBrokerMultiplier(button)
+    if button ~= nil and button.Id ~= nil and (screen == nil or screen.Name == nil) then
+        screen = ActiveScreens and ActiveScreens.Market
+    end
+
+    if not button or not button.Multiplier then
+        return
+    end
+
+    -- Set and clamp the multiplier using your helper
+    local mult = SetBrokerMultiplierValue(button.Multiplier)
+
+    -- Find the active screen if not passed in
+    if not screen or not screen.Components then
+        screen = ActiveScreens and ActiveScreens.Market
+    end
+    if not screen or not screen.Components then
+        return
+    end
+
+    local components = screen.Components
+    -- Reset all multiplier button colors to white
+    for _, value in ipairs({ 1, 10, 25, 50, 100, 250, 500, 1000 }) do
+        local key = "MultiplierButtonx"..tostring(value)
+        local comp = components[key]
+        if comp and comp.Id then
+            ModifyTextBox({
+                Id = comp.TextId,
+                ColorTarget = Color.White,
+                ColorDuration = 0.1,
+            })
+        end
+    end
+
+    -- Highlight the selected one in gold
+    if button.TextId then
+    ModifyTextBox({
+        Id = button.Id,
+        ColorTarget = Color.Gold,
+        ColorDuration = 0.1,
+    })
+    end
+end
+
+
+
 local function IsMarketCurrentlyReversed()
     if not CurrentRun or not CurrentRun.MarketItems or not CurrentRun.MarketItems[1] then
-        return false 
+        return false
     end
 
     local first = CurrentRun.MarketItems[1]
@@ -481,9 +531,6 @@ ModUtil.Path.Override( "HandleMarketPurchase", function( screen, button )
         return
     end
 
-    -- =========================================
-    -- Apply broker multiplication factor
-    -- =========================================
     local mult = GetBrokerMultiplier()
 
     local rawCostAmount = item.CostAmount or 0
@@ -529,11 +576,13 @@ ModUtil.Path.Override( "HandleMarketPurchase", function( screen, button )
             screen.Components["PurchaseButtonTitle".. button.Index].Id,
             screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"].Id,
             screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"].Id,
+            screen.Components["PurchaseButtonTitle".. button.Index .. "BuyAmount"],
             screen.Components["Backing".. button.Index].Id,
             screen.Components["Icon".. button.Index].Id
         }})
         screen.Components["PurchaseButtonTitle".. button.Index .. "Icon"] = nil
         screen.Components["PurchaseButtonTitle".. button.Index .. "SellText"] = nil
+        screen.Components["PurchaseButtonTitle".. button.Index .. "BuyAmount"] = nil
         screen.Components["PurchaseButtonTitle".. button.Index] = nil
         screen.Components["Backing".. button.Index] = nil
         screen.Components["Icon".. button.Index] = nil
