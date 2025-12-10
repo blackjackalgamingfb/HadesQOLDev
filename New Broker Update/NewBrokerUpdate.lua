@@ -492,7 +492,7 @@ function SetBrokerMultiplier( screen, button )
 
     local components = screen.Components
     -- Reset all multiplier button colors to white
-    for _, value in ipairs({ 1, 10, 25, 50, 100, 250, 500, 1000 }) do
+    for _, value in ipairs({ 1, 5, 10, 25, 50, 100, 250, 500, 1000 }) do
         local key = "MultiplierButtonx"..tostring(value)
         local comp = components[key]
         if comp and comp.Id then
