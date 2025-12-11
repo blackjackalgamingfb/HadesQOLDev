@@ -1,14 +1,28 @@
 ModUtil.Mod.Register("PactOfPain")
-local PoP = PactOfPain or {}
 
-----------------------------------------------------------------
--- Core helpers
-----------------------------------------------------------------
+local PoP = PactOfPain or {}
 
 function PoP.IsHardModeSave()
     return GameState
         and GameState.Flags
         and GameState.Flags.HardMode == true
+end
+
+function PoP.IsEnabled()
+    if not PoP.IsHardModeSave() then
+        return false
+    end
+    GameState.Flags = GameState.Flags or {}
+    return GameState.Flags.PactOfPainEnabled == true
+end
+
+function PoP.SetEnabled(value)
+    GameState.Flags = GameState.Flags or {}
+    GameState.Flags.PactOfPainEnabled = value and true or false
+end
+
+function PoP.Toggle()
+    PoP.SetEnabled(not PoP.IsEnabled())
 end
 
 local function PoP_GetTotalShrinePoints()
