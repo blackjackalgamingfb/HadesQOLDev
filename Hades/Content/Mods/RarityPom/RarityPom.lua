@@ -1,0 +1,1 @@
+ModUtil.Mod.Register( "RarityPom" )
