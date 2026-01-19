@@ -7,7 +7,9 @@ set -e
 echo "Creating branches off dev..."
 
 # Fetch the latest dev branch
-git fetch origin dev:dev
+git fetch origin dev
+git checkout dev
+git reset --hard origin/dev
 
 # Create and push HadesSocketSystem branch
 echo "Creating HadesSocketSystem branch..."

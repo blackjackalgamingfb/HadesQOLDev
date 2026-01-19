@@ -58,7 +58,12 @@ jobs:
               echo "  ⚠️  Branch '$BRANCH' already exists remotely"
             else
               # Create branch locally
-              git checkout -b "$BRANCH" "$BASE_BRANCH" 2>/dev/null || git checkout "$BRANCH"
+              if git show-ref --verify --quiet refs/heads/"$BRANCH"; then
+                echo "  Branch '$BRANCH' exists locally, checking it out"
+                git checkout "$BRANCH"
+              else
+                git checkout -b "$BRANCH" "$BASE_BRANCH"
+              fi
               
               # Push to remote
               if git push -u origin "$BRANCH"; then

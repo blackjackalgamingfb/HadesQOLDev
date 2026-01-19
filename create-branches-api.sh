@@ -4,7 +4,19 @@
 
 REPO_OWNER="blackjackalgamingfb"
 REPO_NAME="HadesOverhaulQOL"
-BASE_SHA="54f573fb02975b6ec0bd345713e0f949abc4d93e"  # dev branch commit
+
+# Get the latest SHA from the dev branch (or use provided BASE_SHA env var)
+if [ -z "$BASE_SHA" ]; then
+  echo "Fetching latest dev branch SHA..."
+  BASE_SHA=$(git ls-remote https://github.com/$REPO_OWNER/$REPO_NAME.git refs/heads/dev | cut -f1)
+  if [ -z "$BASE_SHA" ]; then
+    echo "ERROR: Failed to fetch dev branch SHA"
+    exit 1
+  fi
+  echo "Using dev branch SHA: $BASE_SHA"
+else
+  echo "Using provided BASE_SHA: $BASE_SHA"
+fi
 
 # Branch names
 BRANCHES=("HadesSocketSystem" "ZagsBags" "ArmorSmith")
