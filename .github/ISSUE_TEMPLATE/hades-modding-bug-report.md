@@ -1,9 +1,9 @@
 ---
 name: Hades Modding Bug report
 about: Please provide as much detail about the bug/crash as possible.
-title: ''
-labels: ''
-assignees: ''
+title: "[BUG/CRASH]"
+labels: bug
+assignees: blackjackalgamingfb
 
 ---
 
