@@ -11,7 +11,21 @@ All three branches should be created from: `dev` (commit: 54f573f)
 
 ## Methods to Create Branches
 
-### Method 1: Using the Provided Script
+### Method 1: Using GitHub Actions Workflow (Recommended)
+A GitHub Actions workflow has been created to automate the branch creation:
+
+1. Go to the repository on GitHub: https://github.com/blackjackalgamingfb/HadesOverhaulQOL
+2. Click on the "Actions" tab
+3. Select "Create Feature Branches" workflow from the left sidebar
+4. Click "Run workflow" button
+5. Fill in the parameters:
+   - **Base branch**: `dev` (already set as default)
+   - **Branches to create**: `HadesSocketSystem,ZagsBags,ArmorSmith` (already set as default)
+6. Click "Run workflow"
+
+The workflow will automatically create all three branches from the `dev` branch and push them to the repository.
+
+### Method 2: Using the Provided Script
 A bash script has been created to automate the branch creation process:
 
 ```bash
@@ -23,7 +37,7 @@ This script will:
 - Create each branch locally from `dev`
 - Push each branch to the remote repository
 
-### Method 2: Using GitHub CLI
+### Method 3: Using GitHub CLI
 If you have GitHub CLI (`gh`) installed and authenticated:
 
 ```bash
@@ -43,14 +57,14 @@ gh api repos/blackjackalgamingfb/HadesOverhaulQOL/git/refs \
   -f sha='54f573fb02975b6ec0bd345713e0f949abc4d93e'
 ```
 
-### Method 3: Using GitHub Web UI
+### Method 4: Using GitHub Web UI
 1. Go to https://github.com/blackjackalgamingfb/HadesOverhaulQOL
 2. Click on the branch dropdown (currently showing "main" or "dev")
 3. Type the branch name (e.g., "HadesSocketSystem")
 4. Select "Create branch: HadesSocketSystem from 'dev'"
 5. Repeat for "ZagsBags" and "ArmorSmith"
 
-### Method 4: Manual Git Commands
+### Method 5: Manual Git Commands
 If you have push access to the repository:
 
 ```bash

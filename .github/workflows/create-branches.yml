@@ -1,0 +1,94 @@
+name: Create Feature Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: 'Base branch to create branches from'
+        required: true
+        default: 'dev'
+      create_branches:
+        description: 'Branches to create (comma-separated)'
+        required: true
+        default: 'HadesSocketSystem,ZagsBags,ArmorSmith'
+
+jobs:
+  create-branches:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.base_branch }}
+          fetch-depth: 0
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Create and push branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BASE_BRANCH="${{ github.event.inputs.base_branch }}"
+          BRANCHES="${{ github.event.inputs.create_branches }}"
+          
+          echo "Base branch: $BASE_BRANCH"
+          echo "Branches to create: $BRANCHES"
+          echo ""
+          
+          # Get the SHA of the base branch
+          BASE_SHA=$(git rev-parse HEAD)
+          echo "Base SHA: $BASE_SHA"
+          echo ""
+          
+          # Split comma-separated branch names and create each
+          IFS=',' read -ra BRANCH_ARRAY <<< "$BRANCHES"
+          
+          for BRANCH in "${BRANCH_ARRAY[@]}"; do
+            BRANCH=$(echo "$BRANCH" | xargs)  # Trim whitespace
+            echo "Creating branch: $BRANCH"
+            
+            # Check if branch already exists
+            if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+              echo "  ⚠️  Branch '$BRANCH' already exists remotely"
+            else
+              # Create branch locally
+              git checkout -b "$BRANCH" "$BASE_BRANCH" 2>/dev/null || git checkout "$BRANCH"
+              
+              # Push to remote
+              if git push -u origin "$BRANCH"; then
+                echo "  ✅ Successfully created and pushed '$BRANCH'"
+              else
+                echo "  ❌ Failed to push '$BRANCH'"
+                exit 1
+              fi
+              
+              # Go back to base branch for next iteration
+              git checkout "$BASE_BRANCH"
+            fi
+            echo ""
+          done
+          
+          echo "Branch creation complete!"
+      
+      - name: Summary
+        run: |
+          echo "## Branches Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          BRANCHES="${{ github.event.inputs.create_branches }}"
+          IFS=',' read -ra BRANCH_ARRAY <<< "$BRANCHES"
+          
+          for BRANCH in "${BRANCH_ARRAY[@]}"; do
+            BRANCH=$(echo "$BRANCH" | xargs)
+            if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+              echo "- ✅ **$BRANCH** (created from \`${{ github.event.inputs.base_branch }}\`)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- ❌ **$BRANCH** (failed)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
