@@ -41,21 +41,26 @@ This script will:
 If you have GitHub CLI (`gh`) installed and authenticated:
 
 ```bash
+# Get the latest dev branch SHA
+DEV_SHA=$(gh api repos/blackjackalgamingfb/HadesOverhaulQOL/git/refs/heads/dev --jq '.object.sha')
+
 # Create HadesSocketSystem branch
 gh api repos/blackjackalgamingfb/HadesOverhaulQOL/git/refs \
   -f ref='refs/heads/HadesSocketSystem' \
-  -f sha='54f573fb02975b6ec0bd345713e0f949abc4d93e'
+  -f sha="$DEV_SHA"
 
 # Create ZagsBags branch
 gh api repos/blackjackalgamingfb/HadesOverhaulQOL/git/refs \
   -f ref='refs/heads/ZagsBags' \
-  -f sha='54f573fb02975b6ec0bd345713e0f949abc4d93e'
+  -f sha="$DEV_SHA"
 
 # Create ArmorSmith branch
 gh api repos/blackjackalgamingfb/HadesOverhaulQOL/git/refs \
   -f ref='refs/heads/ArmorSmith' \
-  -f sha='54f573fb02975b6ec0bd345713e0f949abc4d93e'
+  -f sha="$DEV_SHA"
 ```
+
+**Note:** The SHA is fetched dynamically to ensure you're using the latest dev commit.
 
 ### Method 4: Using GitHub Web UI
 1. Go to https://github.com/blackjackalgamingfb/HadesOverhaulQOL

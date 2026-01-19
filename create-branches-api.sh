@@ -8,7 +8,20 @@ REPO_NAME="HadesOverhaulQOL"
 # Get the latest SHA from the dev branch (or use provided BASE_SHA env var)
 if [ -z "$BASE_SHA" ]; then
   echo "Fetching latest dev branch SHA..."
-  BASE_SHA=$(git ls-remote https://github.com/$REPO_OWNER/$REPO_NAME.git refs/heads/dev | cut -f1)
+  
+  # Try using GitHub API if GITHUB_TOKEN is available
+  if [ -n "$GITHUB_TOKEN" ]; then
+    BASE_SHA=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+      -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/git/refs/heads/dev" \
+      | grep -o '"sha": *"[^"]*"' | head -1 | cut -d'"' -f4)
+  fi
+  
+  # Fall back to git ls-remote if API didn't work
+  if [ -z "$BASE_SHA" ]; then
+    BASE_SHA=$(git ls-remote https://github.com/$REPO_OWNER/$REPO_NAME.git refs/heads/dev | cut -f1)
+  fi
+  
   if [ -z "$BASE_SHA" ]; then
     echo "ERROR: Failed to fetch dev branch SHA"
     exit 1
@@ -37,7 +50,10 @@ create_branch() {
     local branch_name=$1
     echo "Creating branch: $branch_name"
     
-    response=$(curl -s -w "\n%{http_code}" -X POST \
+    response=$(curl -s -w "\n%{http_code}" \
+        --max-time 30 \
+        --connect-timeout 10 \
+        -X POST \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer $GITHUB_TOKEN" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -46,6 +62,12 @@ create_branch() {
     
     http_code=$(echo "$response" | tail -n1)
     body=$(echo "$response" | head -n-1)
+    
+    # Check for curl errors (empty response or non-numeric http_code)
+    if [ -z "$http_code" ] || ! [[ "$http_code" =~ ^[0-9]+$ ]]; then
+        echo "  ✗ Network error: Failed to connect to GitHub API"
+        return 1
+    fi
     
     if [ "$http_code" -eq 201 ]; then
         echo "  ✓ Successfully created $branch_name"

@@ -54,7 +54,7 @@ jobs:
             echo "Creating branch: $BRANCH"
             
             # Check if branch already exists
-            if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            if git ls-remote --heads origin "$BRANCH" | grep -q "refs/heads/$BRANCH$"; then
               echo "  ⚠️  Branch '$BRANCH' already exists remotely"
             else
               # Create branch locally
@@ -91,7 +91,7 @@ jobs:
           
           for BRANCH in "${BRANCH_ARRAY[@]}"; do
             BRANCH=$(echo "$BRANCH" | xargs)
-            if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            if git ls-remote --heads origin "$BRANCH" | grep -q "refs/heads/$BRANCH$"; then
               echo "- ✅ **$BRANCH** (created from \`${{ github.event.inputs.base_branch }}\`)" >> $GITHUB_STEP_SUMMARY
             else
               echo "- ❌ **$BRANCH** (failed)" >> $GITHUB_STEP_SUMMARY
