@@ -13,7 +13,7 @@ A repository for a massive Quality of Life overhaul for the first iteration of H
    - Broker Update Mod Phase 3 - Refactored the code structure, and fixed the ability to constantly buy LTO Items from broker.
 2. **NewAspectExtender 1.0.**
    - Added the ability to get Titan Blood refunded thought a UI interface on Aspect Extender's modded Weapon Upgrade Screen.
-   - Credit to **LRevolution** for both the BloodRefund function code and the AspectExtender Mod. All I did was merge the two into one and change some things as far as coding goes.
+   - Credit to **LRevolution** for both the BloodRefund function code and the AspectExtender Mod. All I did was merge the two into one and change some things as far as coding goes.  
 
 ### In progess
 1. Ghost Admin Update - Add new items to Contractor (Will mostly be in run items such as urn upgrades, trove upgrades, additional gemstones, darkness, etc..)  
@@ -21,3 +21,7 @@ A repository for a massive Quality of Life overhaul for the first iteration of H
 3. Mirror Fusion - Add a 3rd option that fuses options 1 and 2 per row.    
 4. Pact of Punishment - Add more levels to Pact of Punishment, later add scaling enemy traits according to Heat Level.  
 5. Electo's Tweaks - Finish updating it to support current ModUtil version. 
+6. Zags Bags - Creating Inventory system.  
+7. Armor - Adds armor pieces to the game.  
+8. Socket System
+
