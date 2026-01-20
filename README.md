@@ -25,3 +25,5 @@ A repository for a massive Quality of Life overhaul for the first iteration of H
 7. Armor - Adds armor pieces to the game.  
 8. Socket System
 
+## Development Workflow
+- For work on dev, HadesSocketSystem, ZagsBags, and ArmorSmith branches, run `git fetch`, `git checkout <branch>`, and `git push` from your local environment.
