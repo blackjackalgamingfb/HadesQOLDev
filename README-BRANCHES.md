@@ -31,7 +31,16 @@ See [BRANCH_CREATION_INSTRUCTIONS.md](./BRANCH_CREATION_INSTRUCTIONS.md) for:
 
 ## ✓ Status
 
-- [x] Branches created locally
-- [ ] Branches pushed to remote (requires user action)
+### HadesSocketSystem
+- [x] Branch created locally from dev (commit: 47d7668)
+- [ ] Branch pushed to remote (requires user action or GitHub Actions workflow)
 
-**Ready to push!** Just run the GitHub Actions workflow linked above.
+### ZagsBags
+- [ ] Branch created locally
+- [ ] Branch pushed to remote
+
+### ArmorSmith
+- [ ] Branch created locally
+- [ ] Branch pushed to remote
+
+**Next Step:** To push HadesSocketSystem to remote, run the GitHub Actions workflow linked above or use one of the manual methods described in BRANCH_CREATION_INSTRUCTIONS.md.
