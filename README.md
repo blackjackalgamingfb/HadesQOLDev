@@ -15,7 +15,7 @@ A repository for a massive Quality of Life overhaul for the first iteration of H
    - Added the ability to get Titan Blood refunded thought a UI interface on Aspect Extender's modded Weapon Upgrade Screen.
    - Credit to **LRevolution** for both the BloodRefund function code and the AspectExtender Mod. All I did was merge the two into one and change some things as far as coding goes.  
 
-### In progess
+### In progress
 1. Ghost Admin Update - Add new items to Contractor (Will mostly be in run items such as urn upgrades, trove upgrades, additional gemstones, darkness, etc..)  
 2. Mirror upgrades - Add more levels to the mirror, adjust prices, adjust bonuses.  
 3. Mirror Fusion - Add a 3rd option that fuses options 1 and 2 per row.    
@@ -26,4 +26,4 @@ A repository for a massive Quality of Life overhaul for the first iteration of H
 8. Socket System
 
 ## Development Workflow
-- For work on dev, HadesSocketSystem, ZagsBags, and ArmorSmith branches, run `git fetch`, `git checkout <branch>`, and `git push` from your local environment.
+- For work on dev, HadesSocketSystem, ZagsBags, and ArmorSmith branches, run `git fetch`, `git checkout <branch>`, make changes, `git commit`, then `git push` from your local environment.
