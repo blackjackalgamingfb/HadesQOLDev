@@ -1,3 +1,0 @@
-::Pact Of Pain 
-
-Import "PactOfPain.lua"

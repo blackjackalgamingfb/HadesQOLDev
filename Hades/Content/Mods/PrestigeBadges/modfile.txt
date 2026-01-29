@@ -1,3 +1,0 @@
-::PrestigeBadges
-
-Import "PrestigeBadges.lua"
