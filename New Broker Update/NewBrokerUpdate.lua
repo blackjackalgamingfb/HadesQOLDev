@@ -5,6 +5,8 @@ if GameState then
     GameState.BrokerSwapInProgress = GameState.BrokerSwapInProgress or false
 end
 
+
+
 local function NormalizeMultiplier(value)
     local mult = tonumber(value) or 1
     if mult < 1 then
@@ -498,6 +500,7 @@ function CreateMarketButtons( screen )
         end
     end
 end
+
 
 local function UpdateBrokerUIForMultiplier( screen )
     if not screen or not screen.Components then
