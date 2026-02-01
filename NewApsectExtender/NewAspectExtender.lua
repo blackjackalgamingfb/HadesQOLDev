@@ -2,6 +2,57 @@ ModUtil.Mod.Register("AspectExtender")
 
 AspectExtender = AspectExtender or {}
 AspectExtender.BloodRefundConfig = AspectExtender.BloodRefundConfig or { KeyCostPerBloodRefunded = 2, FreeMode = false }
+AspectExtender.AspectOrderCache = AspectExtender.AspectOrderCache or {}
+
+function AspectExtender.GetAspectSortName( itemData, itemIndex )
+	if itemData == nil then
+		return string.format("zz_missing_%d", itemIndex or 0)
+	end
+	local name = itemData.SortName or itemData.TraitName or itemData.RequiredInvestmentTraitName or itemData.UpgradeUnequippedId or itemData.LockedUpgradeId
+	if name == nil then
+		return string.format("zz_unknown_%d", itemIndex or 0)
+	end
+	return string.lower(tostring(name))
+end
+
+function AspectExtender.BuildWeaponUpgradeOrder( weaponName )
+	local order = {}
+	local data = WeaponUpgradeData and WeaponUpgradeData[weaponName]
+	if not data then
+		return order
+	end
+	for index, _ in pairs(data) do
+		if type(index) == "number" and index <= 4 then
+			table.insert(order, index)
+		end
+	end
+	table.sort(order)
+	local modded = {}
+	for index, itemData in pairs(data) do
+		if type(index) == "number" and index >= 5 then
+			table.insert(modded, { Index = index, SortKey = AspectExtender.GetAspectSortName(itemData, index) })
+		end
+	end
+	table.sort(modded, function(a, b)
+		if a.SortKey == b.SortKey then
+			return a.Index < b.Index
+		end
+		return a.SortKey < b.SortKey
+	end)
+	for _, entry in ipairs(modded) do
+		table.insert(order, entry.Index)
+	end
+	AspectExtender.AspectOrderCache[weaponName] = order
+	return order
+end
+
+function AspectExtender.GetWeaponUpgradeOrder( weaponName )
+	local order = AspectExtender.AspectOrderCache and AspectExtender.AspectOrderCache[weaponName]
+	if order == nil or #order == 0 then
+		order = AspectExtender.BuildWeaponUpgradeOrder(weaponName)
+	end
+	return order
+end
 
 function AspectExtender.GetRefundableBlood( weaponName, itemIndex )
     local level = GetWeaponUpgradeLevel( weaponName, itemIndex ) or 0
@@ -65,8 +116,9 @@ ModUtil.Path.Override( "ShowWeaponUpgradeScreen", function (args)
     ScreenAnchors.WeaponUpgradeScreen = { Components = {}, Name = "WeaponUpgradeScreen", OpenedEquippedIndex = GetEquippedWeaponTraitIndex( weaponName ) }
     local screen = ScreenAnchors.WeaponUpgradeScreen
     screen.StartingIndex = 1
-    screen.AspectCount = TableLength(WeaponUpgradeData[weaponName])
-    screen.PageCount = math.ceil(screen.AspectCount/4)
+    screen.WeaponUpgradeOrder = AspectExtender.BuildWeaponUpgradeOrder(weaponName)
+    screen.AspectCount = #screen.WeaponUpgradeOrder
+    screen.PageCount = math.ceil(screen.AspectCount / 4)
     screen.WeaponName = weaponName
     screen.Components.Display = {}
     local components = screen.Components
@@ -249,10 +301,14 @@ end)
 
 ModUtil.Path.Override("UpdateWeaponUpgradeButtons", function(weaponName, lastEquippedIndex)
 local components = ScreenAnchors.WeaponUpgradeScreen.Components
-for itemIndex, itemData in pairs( WeaponUpgradeData[weaponName] ) do
-    if itemIndex > 4 then
-
-    else
+local screen = ScreenAnchors.WeaponUpgradeScreen
+local order = (screen and screen.WeaponUpgradeOrder) or AspectExtender.GetWeaponUpgradeOrder(weaponName)
+local startIndex = screen and screen.StartingIndex or 1
+local endIndex = math.min(startIndex + 4 - 1, #order)
+for position = startIndex, endIndex do
+    local itemIndex = order[position]
+    local itemData = WeaponUpgradeData[weaponName] and WeaponUpgradeData[weaponName][itemIndex]
+    if itemIndex ~= nil and itemData ~= nil then
         local purchaseButtonKey = "PurchaseButton"..itemIndex
 
         if not IsUpgradeWeaponUpgradeDisabled( weaponName, itemIndex ) and not IsBuyWeaponUpgradeDisabled( weaponName, itemIndex ) then
@@ -315,7 +371,7 @@ end)
 
 
 function AspectExtender.WeaponUpgradeScreenPrevious( screen, button )
-	if not WeaponUpgradeData[screen.WeaponName][screen.StartingIndex - 4] then
+	if screen.StartingIndex - 4 < 1 then
 		return
 	end
 	local components = ScreenAnchors.WeaponUpgradeScreen.Components
@@ -325,7 +381,7 @@ function AspectExtender.WeaponUpgradeScreenPrevious( screen, button )
 end
 
 function AspectExtender.WeaponUpgradeScreenNext( screen, button )
-	if not WeaponUpgradeData[screen.WeaponName][screen.StartingIndex + 4] then
+	if screen.StartingIndex + 4 > screen.AspectCount then
 		return
 	end
 	local components = ScreenAnchors.WeaponUpgradeScreen.Components
@@ -336,14 +392,14 @@ end
 
 function AspectExtender.UpdateWeaponUpgradeScreenButtons(screen)
 	local components = ScreenAnchors.WeaponUpgradeScreen.Components
-	if WeaponUpgradeData[screen.WeaponName][screen.StartingIndex + 4] then
+	if screen.StartingIndex + 4 <= screen.AspectCount then
 		SetAlpha({ Id = components.PageDown.Id, Fraction = 1, Duration = 0 })
 		UseableOn({ Id = components.PageDown.Id })
 	else
 		SetAlpha({ Id = components.PageDown.Id, Fraction = 0, Duration = 0 })
 		UseableOff({ Id = components.PageDown.Id })
 	end
-	if WeaponUpgradeData[screen.WeaponName][screen.StartingIndex - 4] then
+	if screen.StartingIndex - 4 >= 1 then
 		SetAlpha({ Id = components.PageUp.Id, Fraction = 1, Duration = 0 })
 		UseableOn({ Id = components.PageUp.Id })
 	else
@@ -357,6 +413,9 @@ function AspectExtender.WeaponUpgradeScreenLoadPage(screen)
 	local components = screen.Components
 	local textOffsetX = -50
 	local ids = {}
+	screen.WeaponUpgradeOrder = AspectExtender.GetWeaponUpgradeOrder(weaponName)
+	screen.AspectCount = #screen.WeaponUpgradeOrder
+	screen.PageCount = math.ceil(screen.AspectCount / 4)
 	for i, component in pairs(screen.Components) do
 		if component.Destroy then
 			table.insert(ids, component.Id)
@@ -364,8 +423,8 @@ function AspectExtender.WeaponUpgradeScreenLoadPage(screen)
 	end
 	Destroy({ Ids = ids})
 	local offsetIndex = 1
-	for i = screen.StartingIndex, screen.StartingIndex + 4 - 1 do
-		local itemIndex = i
+	for position = screen.StartingIndex, screen.StartingIndex + 4 - 1 do
+		local itemIndex = screen.WeaponUpgradeOrder[position]
 		local itemData = WeaponUpgradeData[weaponName][itemIndex]
 		if itemData ~= nil then
 			local purchaseButtonKey = "PurchaseButton" .. itemIndex
